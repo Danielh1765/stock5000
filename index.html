@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Breath</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+    :root {
+      --bg-color: #f9fafb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --card-bg: #ffffff;
+      --border-color: #e5e7eb;
+      
+      --btn-primary: #10b981;
+      --btn-primary-hover: #059669;
+      --btn-secondary: #f3f4f6;
+      --btn-secondary-hover: #e5e7eb;
+      --btn-danger: #fee2e2;
+      --btn-danger-hover: #fecaca;
+      --text-danger: #ef4444;
+
+      /* Score Colors */
+      --cat-1-bg: #dc2626; --cat-1-text: #ffffff; /* Very Low (Potent Red) */
+      --cat-2-bg: #ea580c; --cat-2-text: #ffffff; /* Low (Burnt Orange) */
+      --cat-3-bg: #f59e0b; --cat-3-text: #ffffff; /* Moderate (Amber) */
+      --cat-4-bg: #84cc16; --cat-4-text: #ffffff; /* Strong (Lime Green) */
+      --cat-5-bg: #16a34a; --cat-5-text: #ffffff; /* Excellent (Green) */
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --shadow-top: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+      
+      --radius-md: 12px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      padding-bottom: 80px; /* Space for bottom nav */
+    }
+
+    #app {
+      width: 100%;
+      max-width: 480px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    header {
+      text-align: center;
+      padding-top: 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+
+    h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    /* Tabs Content */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Timer Section */
+    .timer-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 40px 0 16px;
+    }
+
+    .timer-display {
+      font-size: 6rem;
+      font-weight: 300;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      margin-bottom: 40px;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: baseline;
+    }
+
+    .timer-ms {
+      font-size: inherit; /* Matches the seconds */
+      color: inherit;
+    }
+
+    .btn {
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: 1rem;
+      font-weight: 500;
+      padding: 16px 32px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      width: 100%;
+      max-width: 240px;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background-color: var(--btn-primary);
+      color: white;
+      box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+    }
+
+    .btn-primary.active {
+      background-color: var(--text-danger);
+      box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+    }
+
+    .btn-secondary {
+      background-color: var(--btn-secondary);
+      color: var(--text-main);
+    }
+
+    .btn-danger {
+      background-color: var(--btn-danger);
+      color: var(--text-danger);
+    }
+
+    /* Latest Result */
+    .hidden {
+      display: none !important;
+    }
+
+    .result-card {
+      text-align: center;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    #resultTime {
+      font-size: 2.5rem;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    #resultText {
+      color: var(--text-muted);
+      font-size: 0.9375rem;
+    }
+
+    /* Calendar Section */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+
+    .day-name {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .day-cell {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      border-radius: 50%;
+      position: relative;
+      border: 1px solid var(--border-color);
+      color: #d1d5db;
+    }
+
+    .day-cell.empty {
+      border: none;
+      color: transparent;
+    }
+
+    .day-cell.has-data {
+      font-weight: 600;
+      border: none;
+    }
+
+    .day-cell.today {
+      border: 2px solid var(--text-muted);
+    }
+
+    /* Stats Section */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      border: 1px solid var(--border-color);
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .zones-summary {
+      margin-top: 16px;
+      background: var(--card-bg);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      border: 1px solid var(--border-color);
+    }
+
+    .zone-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.875rem;
+    }
+
+    .zone-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .zone-label {
+      width: 80px;
+      color: var(--text-muted);
+    }
+
+    .zone-bar-container {
+      flex: 1;
+      height: 8px;
+      background: var(--btn-secondary);
+      border-radius: 4px;
+      margin: 0 12px;
+      overflow: hidden;
+    }
+
+    .zone-bar {
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    .zone-value {
+      width: 40px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* History Section */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .history-date {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .history-time {
+      font-weight: 600;
+    }
+
+    .history-badge {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 12px;
+    }
+
+    /* Controls */
+    .controls-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .controls-section .btn {
+      max-width: none;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-size: 1rem;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      box-shadow: var(--shadow-top);
+      z-index: 50;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 33.33%;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      padding: 8px;
+      transition: color 0.2s ease;
+    }
+
+    .nav-item svg {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 4px;
+      stroke-width: 2;
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-item span {
+      font-size: 0.65rem;
+      font-weight: 500;
+    }
+
+    .nav-item.active {
+      color: var(--btn-primary);
+    }
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Breath</h1>
+    </header>
+
+    <!-- SESSION TAB -->
+    <main id="tab-session" class="tab-content active">
+      <section class="timer-section">
+        <div class="timer-display" id="timerDisplay">00:00<span class="timer-ms" id="timerMs">.0</span></div>
+        <button id="startStopBtn" class="btn btn-primary">Start</button>
+      </section>
+
+      <section class="latest-result-section hidden" id="latestResultSection">
+        <div class="card result-card">
+          <div class="badge" id="resultCategory">Moderate</div>
+          <h2 id="resultTime">24.5s</h2>
+          <p id="resultText">A steady and calm hold.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- PROGRESS TAB -->
+    <main id="tab-progress" class="tab-content">
+      <section class="calendar-section">
+        <div class="calendar-header">
+          <h2 style="margin:0" id="currentMonthLabel">Month Year</h2>
+        </div>
+        <div class="card" style="padding: 16px;">
+          <div class="calendar-grid">
+            <div class="day-name">M</div>
+            <div class="day-name">T</div>
+            <div class="day-name">W</div>
+            <div class="day-name">T</div>
+            <div class="day-name">F</div>
+            <div class="day-name">S</div>
+            <div class="day-name">S</div>
+          </div>
+          <div class="calendar-grid" id="calendarGrid">
+            <!-- Calendar Days injected via JS -->
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-section">
+        <h2>Monthly Summary</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Total Entries</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statAvg">0.0s</div>
+            <div class="stat-label">Average</div>
+          </div>
+          <div class="stat-card" style="grid-column: span 2;">
+            <div class="stat-value" id="statBest">0.0s</div>
+            <div class="stat-label">Best Baseline</div>
+          </div>
+        </div>
+        <div class="zones-summary" id="zonesSummary">
+          <!-- Zone % bars injected via JS -->
+        </div>
+      </section>
+
+      <section class="history-section">
+        <h2>Recent Entries</h2>
+        <div class="history-list" id="historyList">
+          <!-- History items injected via JS -->
+        </div>
+      </section>
+    </main>
+
+    <!-- SETTINGS TAB -->
+    <main id="tab-settings" class="tab-content">
+      <section class="controls-section">
+        <h2>Data Management</h2>
+        <div class="card">
+          <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 24px;">
+            Your breath data is stored locally on this device.
+          </p>
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <button id="deleteLatestBtn" class="btn btn-secondary">Delete Latest Entry</button>
+            <button id="clearAllBtn" class="btn btn-danger">Clear All Data</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-target="tab-session">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      <span>Session</span>
+    </button>
+    <button class="nav-item" data-target="tab-progress">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      <span>Progress</span>
+    </button>
+    <button class="nav-item" data-target="tab-settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <script>
+    // Constants & Configuration
+    const STORAGE_KEY = 'morning_breath_baseline';
+    
+    const CATEGORIES = [
+      { max: 9.9, id: 'cat-1', label: 'Very Low', text: 'A short pause. Rest easy.', colorVar: '--cat-1' },
+      { max: 19.9, id: 'cat-2', label: 'Low', text: 'A gentle baseline.', colorVar: '--cat-2' },
+      { max: 39.9, id: 'cat-3', label: 'Moderate', text: 'A steady, calm hold.', colorVar: '--cat-3' },
+      { max: 59.9, id: 'cat-4', label: 'Strong', text: 'A powerful, relaxed hold.', colorVar: '--cat-4' },
+      { max: Infinity, id: 'cat-5', label: 'Excellent', text: 'An exceptional, deep calm.', colorVar: '--cat-5' }
+    ];
+
+    // State
+    let entries = [];
+    let timerInterval = null;
+    let startTime = null;
+    let isRunning = false;
+    let currentElapsedSeconds = 0;
+
+    // DOM Elements - Timer
+    const displaySecs = document.getElementById('timerDisplay').childNodes[0];
+    const displayMs = document.getElementById('timerMs');
+    const startStopBtn = document.getElementById('startStopBtn');
+    const latestResultSection = document.getElementById('latestResultSection');
+    const resultTime = document.getElementById('resultTime');
+    const resultCategory = document.getElementById('resultCategory');
+    const resultText = document.getElementById('resultText');
+    
+    // DOM Elements - Progress
+    const currentMonthLabel = document.getElementById('currentMonthLabel');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const statTotal = document.getElementById('statTotal');
+    const statAvg = document.getElementById('statAvg');
+    const statBest = document.getElementById('statBest');
+    const zonesSummary = document.getElementById('zonesSummary');
+    const historyList = document.getElementById('historyList');
+    
+    // DOM Elements - Settings
+    const deleteLatestBtn = document.getElementById('deleteLatestBtn');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+
+    // DOM Elements - Navigation
+    const navItems = document.querySelectorAll('.nav-item');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    // Initialization
+    function init() {
+      loadData();
+      renderAll();
+      setupEventListeners();
+    }
+
+    // Tab Navigation Logic
+    function switchTab(targetId) {
+      // Update buttons
+      navItems.forEach(btn => {
+        if (btn.dataset.target === targetId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      // Update content
+      tabContents.forEach(content => {
+        if (content.id === targetId) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+    }
+
+    // Data Management
+    function loadData() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          entries = JSON.parse(stored);
+        } catch (e) {
+          entries = [];
+        }
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      renderAll();
+    }
+
+    function addEntry(seconds) {
+      const now = new Date();
+      entries.push({
+        id: now.getTime(),
+        date: now.toISOString(),
+        seconds: parseFloat(seconds.toFixed(1))
+      });
+      saveData();
+      showLatestResult(seconds);
+    }
+
+    function getCategory(seconds) {
+      return CATEGORIES.find(cat => seconds <= cat.max);
+    }
+
+    // Timer Logic
+    function updateDisplay(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      const ms = Math.floor((seconds % 1) * 10);
+      
+      const mStr = m.toString().padStart(2, '0');
+      const sStr = s.toString().padStart(2, '0');
+      
+      displaySecs.nodeValue = `${mStr}:${sStr}`;
+      displayMs.textContent = `.${ms}`;
+    }
+
+    function toggleTimer() {
+      if (isRunning) {
+        // Stop
+        clearInterval(timerInterval);
+        isRunning = false;
+        startStopBtn.textContent = 'Start';
+        startStopBtn.classList.remove('active');
+        
+        if (currentElapsedSeconds > 0) {
+          addEntry(currentElapsedSeconds);
+        }
+        currentElapsedSeconds = 0;
+      } else {
+        // Start
+        latestResultSection.classList.add('hidden');
+        startTime = Date.now();
+        isRunning = true;
+        startStopBtn.textContent = 'Stop';
+        startStopBtn.classList.add('active');
+        
+        timerInterval = setInterval(() => {
+          currentElapsedSeconds = (Date.now() - startTime) / 1000;
+          updateDisplay(currentElapsedSeconds);
+        }, 50); // Update every 50ms
+      }
+    }
+
+    function showLatestResult(seconds) {
+      const cat = getCategory(seconds);
+      
+      resultTime.textContent = `${seconds.toFixed(1)}s`;
+      resultCategory.textContent = cat.label;
+      resultCategory.style.backgroundColor = `var(${cat.colorVar}-bg)`;
+      resultCategory.style.color = `var(${cat.colorVar}-text)`;
+      resultText.textContent = cat.text;
+      
+      latestResultSection.classList.remove('hidden');
+      updateDisplay(0); // Reset timer display
+    }
+
+    // Rendering
+    function renderAll() {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      
+      // Filter entries for current month
+      const monthEntries = entries.filter(e => {
+        const d = new Date(e.date);
+        return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      });
+
+      renderCalendar(currentYear, currentMonth, monthEntries, now);
+      renderStats(monthEntries);
+      renderHistory();
+      
+      // Update buttons state
+      deleteLatestBtn.disabled = entries.length === 0;
+      clearAllBtn.disabled = entries.length === 0;
+    }
+
+    function renderCalendar(year, month, monthEntries, now) {
+      currentMonthLabel.textContent = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      calendarGrid.innerHTML = '';
+      
+      const firstDay = new Date(year, month, 1).getDay();
+      // Adjust to Monday = 0, Sunday = 6
+      const startOffset = firstDay === 0 ? 6 : firstDay - 1; 
+      
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      // Group entries by date
+      const entriesByDate = {};
+      monthEntries.forEach(e => {
+        const dateStr = new Date(e.date).toDateString();
+        if (!entriesByDate[dateStr] || entriesByDate[dateStr].seconds < e.seconds) {
+          entriesByDate[dateStr] = e; // Keep best score per day
+        }
+      });
+
+      // Fill blanks before start of month
+      for (let i = 0; i < startOffset; i++) {
+        const el = document.createElement('div');
+        el.className = 'day-cell empty';
+        calendarGrid.appendChild(el);
+      }
+
+      // Fill days
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayDate = new Date(year, month, day);
+        const el = document.createElement('div');
+        el.className = 'day-cell';
+        el.textContent = day;
+        
+        if (dayDate.toDateString() === now.toDateString()) {
+          el.classList.add('today');
+        }
+
+        const entryForDay = entriesByDate[dayDate.toDateString()];
+        if (entryForDay) {
+          const cat = getCategory(entryForDay.seconds);
+          el.classList.add('has-data');
+          el.style.backgroundColor = `var(${cat.colorVar}-bg)`;
+          el.style.color = `rgba(255, 255, 255, 0.4)`;
+        }
+        
+        calendarGrid.appendChild(el);
+      }
+    }
+
+    function renderStats(monthEntries) {
+      statTotal.textContent = monthEntries.length;
+      
+      if (monthEntries.length === 0) {
+        statAvg.textContent = '0.0s';
+        statBest.textContent = '0.0s';
+        zonesSummary.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:0.875rem">No entries this month.</p>';
+        return;
+      }
+
+      const totalSecs = monthEntries.reduce((sum, e) => sum + e.seconds, 0);
+      const avg = totalSecs / monthEntries.length;
+      const best = Math.max(...monthEntries.map(e => e.seconds));
+
+      statAvg.textContent = `${avg.toFixed(1)}s`;
+      statBest.textContent = `${best.toFixed(1)}s`;
+
+      // Zones summary
+      const counts = [0, 0, 0, 0, 0];
+      monthEntries.forEach(e => {
+        const catIdx = CATEGORIES.findIndex(c => e.seconds <= c.max);
+        if (catIdx !== -1) counts[catIdx]++;
+      });
+
+      zonesSummary.innerHTML = '';
+      CATEGORIES.forEach((cat, idx) => {
+        const count = counts[idx];
+        const percent = Math.round((count / monthEntries.length) * 100);
+        
+        const row = document.createElement('div');
+        row.className = 'zone-row';
+        row.innerHTML = `
+          <div class="zone-label">${cat.label}</div>
+          <div class="zone-bar-container">
+            <div class="zone-bar" style="width: ${percent}%; background-color: var(${cat.colorVar}-bg)"></div>
+          </div>
+          <div class="zone-value">${percent}%</div>
+        `;
+        zonesSummary.appendChild(row);
+      });
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = '';
+      
+      if (entries.length === 0) {
+        historyList.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:0.875rem">No recent entries.</p>';
+        return;
+      }
+
+      // Show top 5 most recent
+      const recent = [...entries].sort((a, b) => b.id - a.id).slice(0, 5);
+      
+      recent.forEach(e => {
+        const cat = getCategory(e.seconds);
+        const d = new Date(e.date);
+        const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+        
+        const el = document.createElement('div');
+        el.className = 'history-item';
+        el.innerHTML = `
+          <div style="display:flex;align-items:center">
+            <div class="history-badge" style="background-color: var(${cat.colorVar}-bg); border: 1px solid var(${cat.colorVar}-text)"></div>
+            <div class="history-date">${dateStr}</div>
+          </div>
+          <div class="history-time" style="color: var(${cat.colorVar}-text)">${e.seconds.toFixed(1)}s</div>
+        `;
+        historyList.appendChild(el);
+      });
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
+      startStopBtn.addEventListener('click', toggleTimer);
+      
+      deleteLatestBtn.addEventListener('click', () => {
+        if (entries.length > 0 && confirm('Delete your most recent entry?')) {
+          entries.pop(); // Remove last added
+          saveData();
+          latestResultSection.classList.add('hidden');
+        }
+      });
+
+      clearAllBtn.addEventListener('click', () => {
+        if (entries.length > 0 && confirm('Are you sure you want to clear ALL entries? This cannot be undone.')) {
+          entries = [];
+          saveData();
+          latestResultSection.classList.add('hidden');
+        }
+      });
+
+      navItems.forEach(btn => {
+        btn.addEventListener('click', () => {
+          switchTab(btn.dataset.target);
+        });
+      });
+    }
+
+    // Run
+    init();
+  </script>
+</body>
+</html>
